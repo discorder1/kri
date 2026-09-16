@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F6F2E8">
+<title>The Protocol</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    --paper: #F6F2E8;
+    --paper-2: #EEE8D9;
+    --ink: #2E2B24;
+    --ink-soft: #86806E;
+    --ink-faint: #B3AC97;
+    --line: #DDD5BE;
+    --moss: #6E7C52;
+    --clay: #AC5C3E;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 56px;
+  }
+  .serif { font-family: 'Fraunces', serif; }
+  .header { padding: 40px 20px 24px 20px; }
+  .eyebrow { font-size: 12px; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; }
+  .title { font-size: 32px; font-weight: 500; line-height: 1.1; margin: 6px 0 0 0; letter-spacing: -0.01em; }
+  .stats { display: flex; gap: 28px; margin-top: 26px; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; }
+  .moss-text { color: var(--moss); } .clay-text { color: var(--clay); }
+  .stat-label { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  .tabs { display: flex; gap: 24px; padding: 0 20px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tab { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink-faint);
+    padding: 0 0 14px 0; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab.active { color: var(--ink); border-bottom: 2px solid var(--moss); }
+  .list { padding: 8px 20px 0 20px; }
+  .card { border-bottom: 1px solid var(--line); padding: 20px 0; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; cursor: pointer; }
+  .card-name { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 500; }
+  .card-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-soft); }
+  .streak-n { color: var(--moss); font-weight: 500; }
+  .status-mark { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); }
+  .status-mark.pass { background: var(--moss); } .status-mark.fail { background: var(--clay); }
+  .card-body { margin-top: 18px; display: none; }
+  .card-body.open { display: block; }
+  .field { margin-bottom: 16px; }
+  .field-label { font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+  .field-text { font-size: 14px; line-height: 1.65; color: var(--ink); }
+  .history { display: flex; gap: 4px; align-items: flex-end; height: 20px; margin: 18px 0 20px 0; }
+  .history-blade { flex: 1; height: 10px; background: var(--line); border-radius: 2px 2px 0 0; }
+  .history-blade.pass { height: 20px; background: var(--moss); }
+  .history-blade.fail { height: 6px; background: var(--clay); }
+  .actions { display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 11px 0; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+    border: 1px solid var(--line); background: transparent; color: var(--ink-soft); cursor: pointer; border-radius: 3px; }
+  .btn.pass-btn.active { background: var(--moss); color: var(--paper); border-color: var(--moss); }
+  .btn.fail-btn.active { background: var(--clay); color: var(--paper); border-color: var(--clay); }
+  .btn.clear-btn { flex: 0 0 auto; padding: 11px 16px; }
+  .footer { padding: 32px 20px 0 20px; text-align: center; }
+  .reset-link { font-size: 12px; color: var(--ink-faint); background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .confirm-box { margin: 0 20px; padding: 16px; border: 1px solid var(--clay); background: var(--paper-2); font-size: 13px; border-radius: 4px; display: none; }
+  .confirm-box.open { display: block; }
+  .confirm-actions { display: flex; gap: 8px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="eyebrow">eleven rites, four disciplines</div>
+  <h1 class="title serif">The Protocol</h1>
+  <div class="stats">
+    <div class="stat"><div class="stat-num moss-text serif" id="streak-count">0</div><div class="stat-label">active streaks</div></div>
+    <div class="stat"><div class="stat-num clay-text serif" id="fail-count">0</div><div class="stat-label">failures, 7 days</div></div>
+  </div>
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="list" id="list"></div>
+<div class="footer">
+  <button class="reset-link" id="reset-link">erase all records</button>
+  <div class="confirm-box" id="confirm-box">
+    This deletes every streak and history entry. Permanently.
+    <div class="confirm-actions">
+      <button class="btn fail-btn active" id="confirm-erase">erase</button>
+      <button class="btn" id="confirm-cancel">cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: "body", label: "Body" },
+  { id: "mind", label: "Mind" },
+  { id: "mastery", label: "Mastery" },
+  { id: "presence", label: "Presence" },
+];
+
+const RITUALS = [
+  { id: "baki", name: "Baki", category: "body",
+    philosophy: "Pain is data, not damage. Every session forges you or wastes you.",
+    action: "Compound lifts to technical failure, five sets of five, ninety seconds rest. Twenty minutes live sparring at ninety percent output. Close with a hundred full-intent strikes on a fixed target.",
+    standard: "Miss a rep count — the day is logged a failure, no exceptions. Three failures in a row: cut volume twenty percent for a week to rebuild the base." },
+  { id: "toji", name: "Toji", category: "body",
+    philosophy: "You owe no one your effort. You are a blade for hire to your own goals.",
+    action: "A fixed, written contract of movements and loads — no improvisation. Explosive output, sprints, jumps, weighted throws, at max intent and minimum reps.",
+    standard: "The contract is completed in full or it's a breach. No partial credit. Pass or fail, nothing between." },
+  { id: "satoru", name: "Satoru", category: "body",
+    philosophy: "Boredom is the enemy, not difficulty. Operate as though nothing has ever actually challenged you.",
+    action: "A randomized max-effort trial, drawn blind from a pool of fifteen tests. Performed cold, no warm-up — a test of constant readiness.",
+    standard: "Below ninety percent of personal best on that test is a failure. You are only ever measured against yourself." },
+  { id: "fischer", name: "Fischer", category: "mind",
+    philosophy: "Obsessive, isolating focus. The board is the only reality during work hours. Distraction is an intrusion to be crushed.",
+    action: "Ninety-minute deep study blocks, phone in another room, single subject. Drill one weakness until closed, then verify against it immediately.",
+    standard: "Any task-switch inside the block voids the full ninety minutes — struck from the log as if it never happened." },
+  { id: "kira-obito", name: "Kira & Obito", category: "mind",
+    philosophy: "Total control over what others are permitted to know about you. Trust nothing at face value — including your own assumptions.",
+    action: "One live problem, one written contingency tree — three branches, a countermove for each — before any action is taken. Then name one impulsive reaction from the last day and rehearse the calculated version aloud, twice.",
+    standard: "Acting without the written tree, or logging zero impulsive reactions in a day, is an unforced error — a mark that stands until offset by extra work." },
+  { id: "sukuna-doma", name: "Sukuna & Doma", category: "mastery",
+    philosophy: "Contempt for anything less than mastery, delivered with total calm. Inspect your own work the way a connoisseur inspects a flawed object.",
+    action: "Three hundred reps of your hardest technical variation — form never allowed to degrade, degraded reps don't count. Film the work. Name every flaw aloud, no inflection.",
+    standard: "The session isn't over until three hundred clean reps are banked. If the day's flaw isn't measurably corrected on film, log it unrefined — worse than a missed session." },
+  { id: "madara-musashi", name: "Madara & Musashi", category: "mastery",
+    philosophy: "You are playing a decades-long game. Patience fused with intensity — each day is one move logged against a long arc, not a mood.",
+    action: "A daily minimum output measured against a multi-year target curve. After training, write technical analysis — no praise, one corrective principle added to a running text.",
+    standard: "Missing the daily minimum breaks the chain — the streak resets to zero. A flaw logged twice is an automatic fail, regardless of physical output." },
+  { id: "pain-itachi", name: "Pain & Itachi", category: "presence",
+    philosophy: "Detachment from personal stake. Silent sacrifice, long-view calculation. You do not explain yourself, and you feel nothing about the difficulty — only whether the objective was met.",
+    action: "One daily maximal test, performed alone, in silence. Then twenty minutes of silent strategic simulation of your biggest conflict, from two adversarial angles, before any plan is written.",
+    standard: "The test number must equal or exceed yesterday's, or an immediate penalty repeat follows. A plan written without the full silent simulation first is void." },
+  { id: "shelby", name: "Thomas Shelby", category: "presence",
+    philosophy: "Control the room by controlling your information output. Every word spoken is a resource spent.",
+    action: "One planned high-stakes conversation per day. Decide beforehand exactly what will and won't be said. Hold the line under pressure.",
+    standard: "Deviating from the pre-set line is a leak. Three leaks in a week: enforced silence in non-essential conversation for the week that follows." },
+  { id: "togi-berlin", name: "Togi & Berlin", category: "presence",
+    philosophy: "Presence is built, not performed. Stillness and rehearsal remove all accident from how you are seen.",
+    action: "Fifteen minutes of enforced physical stillness and silence in public — posture locked, no fidgeting, no phone. Separately, fully script any upcoming high-stakes interaction and rehearse it once before it happens for real.",
+    standard: "Any fidget or filler resets the stillness clock to zero. An unrehearsed real interaction is logged unprepared, regardless of outcome." },
+  { id: "tate", name: "Tate", category: "presence",
+    philosophy: "Total ownership of routine. No external circumstance is an excuse. Discipline is proven under the worst conditions, not the best.",
+    action: "The identical routine executed on your single worst day of the week — same wake time, same training, same targets as your best day.",
+    standard: "Any deviation on the hardest day is a full system failure for the week. The hard day is the only proof that counts." },
+];
+
+const STORAGE_KEY = "ritual-protocol-data-v2";
+let data = {};
+let activeCategory = "body";
+let expandedId = null;
+
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) data = JSON.parse(raw);
+} catch (e) { data = {}; }
+
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  catch (e) { /* storage unavailable */ }
+}
+
+const pad = n => String(n).padStart(2, "0");
+function dateKeyOffset(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+const todayKey = () => dateKeyOffset(0);
+
+function computeStreak(history) {
+  if (!history) return 0;
+  let streak = 0;
+  let offset = history[todayKey()] ? 0 : -1;
+  while (history[dateKeyOffset(offset)] === "pass") { streak++; offset--; }
+  return streak;
+}
+function last14Days() {
+  const days = [];
+  for (let i = -13; i <= 0; i++) days.push(dateKeyOffset(i));
+  return days;
+}
+
+function mark(id, verdict) {
+  const key = todayKey();
+  const current = data[id] || { history: {} };
+  current.history[key] = verdict;
+  data[id] = current;
+  persist();
+  render();
+}
+function unmark(id) {
+  const current = data[id] || { history: {} };
+  delete current.history[todayKey()];
+  data[id] = current;
+  persist();
+  render();
+}
+
+function render() {
+  // tabs
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "tab" + (activeCategory === cat.id ? " active" : "");
+    btn.textContent = cat.label;
+    btn.onclick = () => { activeCategory = cat.id; expandedId = null; render(); };
+    tabsEl.appendChild(btn);
+  });
+
+  // stats
+  let activeStreaks = 0, failsThisWeek = 0;
+  const week = last14Days().slice(-7);
+  RITUALS.forEach(r => {
+    const hist = (data[r.id] || {}).history || {};
+    if (computeStreak(hist) > 0) activeStreaks++;
+    failsThisWeek += week.filter(d => hist[d] === "fail").length;
+  });
+  document.getElementById("streak-count").textContent = activeStreaks;
+  document.getElementById("fail-count").textContent = failsThisWeek;
+
+  // list
+  const listEl = document.getElementById("list");
+  listEl.innerHTML = "";
+  RITUALS.filter(r => r.category === activeCategory).forEach(r => {
+    const record = data[r.id] || { history: {} };
+    const streak = computeStreak(record.history);
+    const todayVerdict = record.history[todayKey()];
+    const isExpanded = expandedId === r.id;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const head = document.createElement("div");
+    head.className = "card-head";
+    head.onclick = () => { expandedId = isExpanded ? null : r.id; render(); };
+    head.innerHTML = `
+      <div class="card-name">${r.name}</div>
+      <div class="card-meta">
+        <span><span class="streak-n">${streak}</span> day</span>
+        <span class="status-mark${todayVerdict ? " " + todayVerdict : ""}"></span>
+      </div>`;
+    card.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "card-body" + (isExpanded ? " open" : "");
+    if (isExpanded) {
+      const bladesHtml = last14Days().map(d => {
+        const v = record.history[d];
+        return `<div class="history-blade${v ? " " + v : ""}" title="${d}"></div>`;
+      }).join("");
+      body.innerHTML = `
+        <div class="field"><div class="field-label">philosophy</div><div class="field-text">${r.philosophy}</div></div>
+        <div class="field"><div class="field-label">action</div><div class="field-text">${r.action}</div></div>
+        <div class="field"><div class="field-label">standard</div><div class="field-text">${r.standard}</div></div>
+        <div class="field-label">last 14 days</div>
+        <div class="history">${bladesHtml}</div>
+        <div class="actions">
+          <button class="btn pass-btn${todayVerdict === "pass" ? " active" : ""}" id="pass-${r.id}">pass today</button>
+          <button class="btn fail-btn${todayVerdict === "fail" ? " active" : ""}" id="fail-${r.id}">fail today</button>
+          ${todayVerdict ? `<button class="btn clear-btn" id="clear-${r.id}">clear</button>` : ""}
+        </div>`;
+    }
+    card.appendChild(body);
+    listEl.appendChild(card);
+
+    if (isExpanded) {
+      document.getElementById(`pass-${r.id}`).onclick = () => mark(r.id, "pass");
+      document.getElementById(`fail-${r.id}`).onclick = () => mark(r.id, "fail");
+      const clearBtn = document.getElementById(`clear-${r.id}`);
+      if (clearBtn) clearBtn.onclick = () => unmark(r.id);
+    }
+  });
+}
+
+document.getElementById("reset-link").onclick = () => {
+  document.getElementById("confirm-box").classList.add("open");
+};
+document.getElementById("confirm-cancel").onclick = () => {
+  document.getElementById("confirm-box").classList.remove("open");
+};
+document.getElementById("confirm-erase").onclick = () => {
+  data = {};
+  persist();
+  document.getElementById("confirm-box").classList.remove("open");
+  render();
+};
+
+render();
+</script>
+</body>
+</html>
