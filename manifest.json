@@ -1,0 +1,9 @@
+{
+  "name": "The Protocol",
+  "short_name": "Protocol",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F6F2E8",
+  "theme_color": "#F6F2E8",
+  "icons": []
+}
